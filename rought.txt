@@ -258,10 +258,10 @@ cols--feilds
 
 ORM--OBJECT RELATIONAL MAPPING
 --technique used to map java object to database tables
-it allows devs to worj with database using oop concepts making ti easy to interact
+it allows devs to work with database using oop concepts making ti easy to interact
 with relational db
 ex java class user and a database table users
-orm framework like hibernate can map the feilds in the user class to cos in the user table
+orm framework like hibernate can map the feilds in the user class to cols in the user table
 (BASICALLY EK THEORY HAI KI HUM JAVA OBJ KO DB PAI MAP KAR SAKTE HAI))
 
 
@@ -290,7 +290,7 @@ we dont have a traditional persistance provider for mongodb
 
 SPRING DATA MONGODB
  --serves as a persistance provider for mongodb
- --provides the nesessary abstraction and implimentation to wotrj with mongodb in spring application
+ --provides the nesessary abstraction and implimentation to work with mongodb in spring application
 
 
  --isko use karne ke lia pom.xl me ek dependency injection  dena padta hai
@@ -509,15 +509,6 @@ spring.security.user.password= paswd
 make a class for coustomization
 
 
-package com.springproj.journalApp.config;
-
-import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-
 @Configuration
 @EnableWebSecurity//this annotation signals spring to enable web security support  this is what makes application secured its used in conjuction with cofiguration
 //websecurityconfurationadapter is a utility class in the spring security framework that provides default configurations and allows coustomization of certain
@@ -576,18 +567,199 @@ public class springsecurity extends WebSecurityConfigurerAdapter {
 
 
 
+...what is bcryptencoder
+
+
+package com.springproj.journalApp.config;
+
+import com.springproj.journalApp.service.userdetailserviceimpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+@Configuration
+@EnableWebSecurity//this annotation signals spring to enable web security support  this is what makes application secured its used in conjuction with cofiguration
+//websecurityconfurationadapter is a utility class in the spring security framework that provides default configurations and allows coustomization of certain
+//features by extending it u can configure and coustomize spring security for your applications needs
+
+public class springsecurity extends WebSecurityConfigurerAdapter {
+
+
+@Autowired
+private userdetailserviceimpl userdetailservice;
+
+
+
+//    @Override
+//    protected void configure(HttpSecurity http) throws Exception {
+//        super.configure(http);
+        //this method provides a way to configure how request are sequres
+        //it defines how request matchinh should be done and what security actions should be applied
+//        http
+//                .authorizeRequests()//tels spring to start authorising requests
+//                .antMatchers("/journal/**").permitAll()//the request matching path jounal should be permited /allowedfor all the users wether they are authenticated or not||** is wild card pattern
+//                .anyRequest().authenticated()//any request which is not matched by previous matcher should be authenticated yani users ko password dena padega iske lia
+//                .and()//this method join several configurations it helps to continue the configuration from root firse http pe chalajayega --redirected
+//                .formLogin();// enables form based authentication by default it will provide a form for the user to enter their username and pswd if the user is not authenticated an they try to access the secured endpts they will be redirected to the default login form
+//
+//
+//
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http
+                    .csrf().disable()
+                    .authorizeRequests()
+                    .antMatchers("/user", "/login", "/register").permitAll() // ✅ FIRST
+                    .anyRequest().authenticated()                           // ✅ LAST
+                    .and()
+                    .httpBasic();
+        }
+
+
+
+
+        // the multiple dots is method chaining
+
+        //u can access /helo without any authentication however if u try to acces another endpt u will be redirected to a login form
+
+        //when we use the .formlogin() method in out security config without specifying the .loginpage("coustom path") the default login page becomes active  }
+//spring security provides an in built controller that handles the /login path this controler is responsible for rendering the default login form when a get request is made to /login
+//by default spring security also provides a logout functionality when .logout() is cofigured a post request to/logout wil log the user out and invalidate their session
+//basic authentication is by desing stateless- har baar  har req mai username aur password bhejna padega
+   /*
+   some applicatiom do mix basic authentication with session management for various reasons
+   thi isnt stdandard behavour an requres additional setup and logic in such scenarios behaviour and requires additional setup and logic
+   once user credentias are verified via basic authentication a session might be establshied and the client provided a session cookie
+   this way client wont need to send any authorization heaer with every request and the server can rely on the session cookie to identify the authenticated user
+
+
+
+   when u login via spring security it manages to authenticate u across the multiple requests despite
+    http being stateless
+    1 session creation after sucessful authentication an http session is formed ur authentication details  are stored in this session
+    2 session cookie a JSESSIONID cookie is sent to ur browser which gets sent back when subsequent requests helping the server recognise ut session  //agli req m hum jessionid bhejenge wapis with the request
+    3 security context --using the jessionid spring security fetches ur authentication details for each request
+    4 session timeout sessions hae a limited life if u are inactive past the limit u are logged out
+    5 logout when logging out ur session ends and related cookies are removed
+    remember me-- spring security can remember u after the session  the session ends using a diff persistent cookie
+
+    spring security uses sessions and cookies maily jsessionid to esure u remain authenticated for multuple req
+
+
+    */
+  }
+
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userdetailservice).passwordEncoder(passwordEncoder());
+
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
+
+    }
+
+}
+
+// we want our sb application to authenticate users based on their credentials stored in mongodb database
+//this means that our users and their pswd {hashed} wi be stored in mongodb and when a user tries to log in the system should check the provided credentials
+//against whats stored in databse
+
+
+
+/*  imp points for spring security
+1a user entity to represent the user data model
+2 a repository userrespositry to interace with mongodb
+3 userdetailservice implimentation to fetch user details
+5 a configuration securityconfig to integrate everyting with spring security
+ */
 
 
 
 
 
 
+yaml
+how does sb reads the properties ?
+
+class path
+ --is a list of jars and direcotories used by  jvm
+
+yaml== yaml aint markup language
+file extension ==.yaml
+--easier way to  write application.properties
+incase same property is written in both priority is application.properties
+no yaml
+
+
+using mvn wrapper to run the program
 
 
 
 
 
+unit testing
+junit test video 24 for future after 17 mins
 
 
 
+to reduce complexity we can use mockito
 
+
+logging--application is already deployed but some api is giving unexpected  but in local its normaloutput so we do logging
+logging is an essential aspect of application devlopment that alowd developers to monitor and troubleshoot their applications
+spring boot supports various logging frameworks such as logback log4j2 and java util logging jul
+
+
+logback --a popular logging framework that serves as the default in many sb application
+flexiblea config + good performance
+
+log4j2== another widely used logging framework with features such as async logging and support for various outhput formats
+
+java util logging == the default logging framework uncluded in the jaa=va stanard edition while its less
+feature rich than some third party frameworks it is straightforward and is part of java platform
+
+
+
+sb comes with default logging config that uses logback as the default logging implementation
+it provides a good balance between simplicity and flexiblity
+
+the default config is embeded within the sb libraries and may not be visbible in ur proj src code
+
+consoe pe jo ate h wo log hi hai
+
+if u want to coustomize the logging config u can create ur own logback
+spring.xml or logback.xml file in the src/main/resources directory when sb detects this file in ur proj it will use it instead of the default config
+(file me ayega)
+
+logging levels  help in categorizing log statements based on their severity the common logging leves are
+trace
+debug
+info
+warn
+error
+
+we can set the desired logging leve for specific packages or classes allowing them to control the amount
+them to control the amount of info logged at  runtime
+
+by default logging is enabled for info warn error
+
+ sb provides annotations like @Slf4j and @Log4j@
+ thar u can automatically inject logger instance in ur class
+
+use slf4j  annotation why??
+
+we can also use yaml to configure logging
+we prefer logging through xml file
