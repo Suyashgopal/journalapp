@@ -3,16 +3,17 @@ package com.springproj.journalApp.service;
 import com.springproj.journalApp.entity.journalentry;
 import com.springproj.journalApp.entity.user;
 import com.springproj.journalApp.repository.journalentryrepo;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 //business logic ie. sari katha funtionalities yaha hogi
 public class journalentryservice {
@@ -36,6 +37,7 @@ user user = userservice.findByusername(username);
         user.getJournalentries().add(saved);
         userservice.saveuser(user);}
     catch(Exception e){
+        log.error("Error occurred while saving entry", e);
         throw new RuntimeException("an error occoured while saving the entry",e);
 
     }
@@ -72,7 +74,7 @@ user user = userservice.findByusername(username);
 
       }
       catch (Exception e){
-          System.out.println(e);
+          log.error("Error occurred while deleting entry with id: {}", id, e);
           throw new RuntimeException("a error occured while deleting the entry");
       }
     return removed;

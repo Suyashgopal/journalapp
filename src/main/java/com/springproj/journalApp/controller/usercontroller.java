@@ -7,6 +7,8 @@ import com.springproj.journalApp.repository.userentryrepo;
 import com.springproj.journalApp.service.userservice;
 import com.springproj.journalApp.service.weatherservice;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -24,10 +26,13 @@ public class usercontroller {
     private userentryrepo userentryrepo;
     @Autowired
     weatherservice weatherservice;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
 
 
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public List<user> getallusers(){
 return userservice.getall();
@@ -45,8 +50,8 @@ return userservice.getall();
         user userindb = userservice.findByusername(username);
 if(userindb!= null){
     userindb.setUsername(user.getUsername());//database wale user ka username update ho raha h body m given username se
-    userindb.setPassword(user.getPassword());
-    userservice.savenewuser(userindb);
+    userindb.setPassword(passwordEncoder.encode(user.getPassword()));
+    userservice.saveUpdatedUser(userindb);
 }
 
    return new ResponseEntity<>(HttpStatus.NO_CONTENT);

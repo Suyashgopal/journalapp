@@ -80,7 +80,11 @@ private userservice userservice;
         user user= userservice.findByusername(username);
         List<journalentry> collect = user.getJournalentries().stream().filter(x-> x.getId().equals(myid)).collect(Collectors.toList());
 
-return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        if (!collect.isEmpty()) {
+            return new ResponseEntity<>(collect.get(0), HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
     }
 
@@ -102,6 +106,7 @@ return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
                 old.setTitle(newentry.getTitle() != null && !newentry.getTitle().equals("") ? newentry.getTitle() : old.getTitle());
                 old.setContent(newentry.getContent() != null && !newentry.getContent().equals("") ? newentry.getContent() : old.getContent());
+                journalentryservice.saveentry(old);
                 return new ResponseEntity<>(journalentry.get(), HttpStatus.OK);
             }
         }
@@ -111,7 +116,7 @@ return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
 
 
-    @DeleteMapping("id/{myId}")
+    @DeleteMapping("id/{myid}")
     public ResponseEntity<?> deletehournalentrybyid(@PathVariable ObjectId myid)
     {Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username= authentication.getName();

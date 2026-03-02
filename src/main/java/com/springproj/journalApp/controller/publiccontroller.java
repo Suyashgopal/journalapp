@@ -42,10 +42,13 @@ private userdetailserviceimpl  userdetail;
 
     }
     @PostMapping("/signup")
-    public void  signup(@RequestBody user userbody){
-
-        userservice.savenewuser(userbody);
-
+    public ResponseEntity<?>  signup(@RequestBody user userbody){
+        boolean created = userservice.savenewuser(userbody);
+        if(created) {
+            return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not create user");
+        }
     }
 
 

@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 
 public class configjournalappentity {
 
-
-
+    @Id
+    private org.bson.types.ObjectId id;
     private String key;
     private String value;
 

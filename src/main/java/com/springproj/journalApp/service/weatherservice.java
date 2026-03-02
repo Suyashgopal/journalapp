@@ -34,17 +34,18 @@ private appcache  appcache;
 
 
     public weatherResponse getWether(String city ){
-        weatherResponse cachedresp = redisService.get("weather_of" + city, weatherResponse.class);
+        String normalizedCity = city.toLowerCase().trim();
+        weatherResponse cachedresp = redisService.get("weather_of_" + normalizedCity, weatherResponse.class);
 
         if(cachedresp!=null){
             return cachedresp;
         }
         else{
-        String finalAPI= appcache.Appcache.get("weather_api").replace("CITY", city ).replace("API_KEY",API_KEY);
+        String finalAPI= "http://api.weatherstack.com/current?access_key=" + API_KEY + "&query=" + normalizedCity;
      ResponseEntity <weatherResponse> response= restTemplate.exchange(finalAPI, HttpMethod.GET,null, weatherResponse.class);
    weatherResponse  body=  response.getBody();
    if(body!=null){
-       redisService.set("weather_of"+city,body,300l);
+       redisService.set("weather_of_"+normalizedCity,body,300l);
    }
    return body;
 

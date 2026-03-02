@@ -47,7 +47,7 @@ public class userservice {
     public boolean savenewuser(user u) {
         try {
             u.setPassword(passwordencoder.encode(u.getPassword()));
-            u.setRoles(Arrays.asList("user"));
+            u.setRoles(Arrays.asList("USER"));
             userentryrepo.save(u);
             return true;
         } catch (Exception e) {
@@ -79,6 +79,10 @@ public class userservice {
         userentryrepo.deleteById(id);
     }
 
+
+    public void saveUpdatedUser(user u) {
+        userentryrepo.save(u);
+    }
 
     public user findByusername(String username){
         return userentryrepo.findByUsername(username);

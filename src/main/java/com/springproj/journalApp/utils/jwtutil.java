@@ -12,7 +12,7 @@ import java.util.Map;
 @Component
 public class jwtutil {
 
-    private String SECRET_KEY = "***REMOVED***";  //32 byets ki secrate key
+    private String SECRET_KEY = "***REMOVED***";
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
@@ -46,12 +46,12 @@ public class jwtutil {
 
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
-                .claims(claims)//sending data
-                .subject(subject)  //how do we identify user-username,pswd
+                .claims(claims)
+                .subject(subject)
                 .header().empty().add("typ","JWT")
                 .and()
-                .issuedAt(new Date(System.currentTimeMillis())) //kab gerate hua token
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 5)) // 5 minutes expiration time
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 50)) // 50 minutes expiration time
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -60,5 +60,7 @@ public class jwtutil {
         return !isTokenExpired(token);
     }
 
-
+    public Boolean validateToken(String token, String username) {
+        return extractUsername(token).equals(username) && !isTokenExpired(token);
+    }
 }
