@@ -8,6 +8,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class userdetailserviceimpl implements UserDetailsService {
 
@@ -24,10 +26,18 @@ public class userdetailserviceimpl implements UserDetailsService {
             throw new UsernameNotFoundException("User not found: " + username);
         }
 
+        // Map the user's actual persisted roles to Spring authorities.
+        // Previously this was hardcoded to "ROLE_USER", which made every
+        // ADMIN authority unreachable and broke all role-based access control.
+        List<String> roles = user.getRoles();
+        String[] authorities = (roles == null || roles.isEmpty())
+                ? new String[]{"ROLE_USER"}
+                : roles.stream().map(r -> "ROLE_" + r).toArray(String[]::new);
+
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getPassword())   // BCrypt hash
-                .authorities("ROLE_USER")       // ✅ GUARANTEED authority
+                .authorities(authorities)
                 .build();
     }
 
