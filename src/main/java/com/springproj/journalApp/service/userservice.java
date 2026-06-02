@@ -1,19 +1,13 @@
 
 package com.springproj.journalApp.service;
 
-import com.springproj.journalApp.controller.journalentrycontrollerv2;
+import com.springproj.journalApp.dto.SignupRequest;
 import com.springproj.journalApp.entity.user;
 import com.springproj.journalApp.repository.userentryrepo;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
-import org.slf4j.Logger;//abstraction above logback (simpe logging facade for java)
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -29,6 +23,10 @@ public class userservice {
     @Autowired
     private userentryrepo userentryrepo;
 
+    // Share the single Spring-managed encoder instead of a private static instance.
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
 
     public void saveuser(user u){
         userentryrepo.save(u);
@@ -37,38 +35,41 @@ public class userservice {
 
 
 
-    public void saveadmin(user u) {
-        u.setPassword(passwordencoder.encode(u.getPassword()));
-        u.setRoles(Arrays.asList("USER","ADMIN"));
+    public void saveadmin(SignupRequest req) {
+        user u = user.builder()
+                .username(req.getUsername())
+                .password(passwordEncoder.encode(req.getPassword()))
+                .email(req.getEmail())
+                .sentimentAnalysis(req.isSentimentAnalysis())
+                .roles(Arrays.asList("USER", "ADMIN"))
+                .build();
         userentryrepo.save(u);
     }
-    private static final PasswordEncoder passwordencoder= new BCryptPasswordEncoder();
 
-    public boolean savenewuser(user u) {
-        try {
-            u.setPassword(passwordencoder.encode(u.getPassword()));
-            u.setRoles(Arrays.asList("USER"));
-            userentryrepo.save(u);
-            return true;
-        } catch (Exception e) {
-            log.info("xyz");
-//            logger.warn("xyz");
-//            logger.debug("xyz");
-//            logger.trace("xyz");
-//            logger.error("error occured ",e);
-//
-//
-
-
-            return false;
-
-        }
+    /**
+     * Creates a normal user. A duplicate username surfaces as a DuplicateKeyException,
+     * which the GlobalExceptionHandler translates to 409 — no more silent boolean swallow.
+     */
+    public user savenewuser(SignupRequest req) {
+        user u = user.builder()
+                .username(req.getUsername())
+                .password(passwordEncoder.encode(req.getPassword()))
+                .email(req.getEmail())
+                .sentimentAnalysis(req.isSentimentAnalysis())
+                .roles(Arrays.asList("USER"))
+                .build();
+        return userentryrepo.save(u);
     }
 
 
     public List<user> getall(){
         return userentryrepo.findAll();
 
+    }
+
+    // Paginated listing so the admin endpoint never loads the entire collection at once.
+    public org.springframework.data.domain.Page<user> getall(org.springframework.data.domain.Pageable pageable){
+        return userentryrepo.findAll(pageable);
     }
     public Optional<user> findbyid(ObjectId id) {
         return userentryrepo.findById(id);

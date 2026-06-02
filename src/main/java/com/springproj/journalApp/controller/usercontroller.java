@@ -2,6 +2,7 @@ package com.springproj.journalApp.controller;
 
 import com.springproj.journalApp.api.response.weatherResponse;
 import com.springproj.journalApp.cache.appcache;
+import com.springproj.journalApp.dto.UpdateUserRequest;
 import com.springproj.journalApp.entity.user;
 import com.springproj.journalApp.repository.userentryrepo;
 import com.springproj.journalApp.service.userservice;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 
+import javax.validation.Valid;
 import java.util.*;
 //here we have secured endpts
 @RestController
@@ -44,18 +46,31 @@ return userservice.getall();
 
 
     @PutMapping
-    public ResponseEntity<?> updateuser( @RequestBody user user) {
-        Authentication auth= SecurityContextHolder.getContext().getAuthentication();
+    public ResponseEntity<?> updateuser(@Valid @RequestBody UpdateUserRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         user userindb = userservice.findByusername(username);
-if(userindb!= null){
-    userindb.setUsername(user.getUsername());//database wale user ka username update ho raha h body m given username se
-    userindb.setPassword(passwordEncoder.encode(user.getPassword()));
-    userservice.saveUpdatedUser(userindb);
-}
+        if (userindb == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
 
-   return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        // Partial update: only apply fields actually supplied. Previously a missing password
+        // caused passwordEncoder.encode(null) -> NPE/500, and the username was overwritten blindly.
+        String newUsername = request.getUsername();
+        if (newUsername != null && !newUsername.isBlank() && !newUsername.equals(username)) {
+            if (userservice.findByusername(newUsername) != null) {
+                return new ResponseEntity<>(HttpStatus.CONFLICT); // username taken
+            }
+            userindb.setUsername(newUsername);
+        }
 
+        String newPassword = request.getPassword();
+        if (newPassword != null && !newPassword.isBlank()) {
+            userindb.setPassword(passwordEncoder.encode(newPassword));
+        }
+
+        userservice.saveUpdatedUser(userindb);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
 @DeleteMapping
