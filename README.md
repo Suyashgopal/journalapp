@@ -73,8 +73,3 @@ GET  /admin                 list all users (paginated)
 POST /admin/create-admin-user
 ```
 
-## Known issues / TODO
-
-- Test class names are all lowercase (`userservicetest`) so Maven Surefire skips them — need to rename to `UserServiceTest` etc.
-- Old credentials were committed in an earlier commit and are still in git history — those need to be rotated even though `application.yml` no longer has them hardcoded
-- Frontend (`frontend/`) is a static HTML/JS prototype, not wired to a build tool yet
