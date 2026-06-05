@@ -1,6 +1,7 @@
 package com.springproj.journalApp.controller;
 
-import com.springproj.journalApp.entity.user;
+import com.springproj.journalApp.dto.LoginRequest;
+import com.springproj.journalApp.dto.SignupRequest;
 import com.springproj.journalApp.service.userdetailserviceimpl;
 import com.springproj.journalApp.service.userservice;
 import com.springproj.journalApp.utils.jwtutil;
@@ -10,9 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 //isme hum unauthenticated service denge
 
 
@@ -42,27 +44,22 @@ private userdetailserviceimpl  userdetail;
 
     }
     @PostMapping("/signup")
-    public ResponseEntity<?>  signup(@RequestBody user userbody){
-        boolean created = userservice.savenewuser(userbody);
-        if(created) {
-            return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not create user");
-        }
+    public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest request) {
+        // Validation is enforced by @Valid; duplicate usernames surface as 409 via the
+        // GlobalExceptionHandler. No more opaque boolean / blanket 400.
+        userservice.savenewuser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
     }
 
 
     @PostMapping("/login")
-
-    public ResponseEntity<String>  login(@RequestBody user user){
-try{
-authenticationManager.authenticate
-        (new UsernamePasswordAuthenticationToken(user.getUsername(),user.getPassword()));
-    UserDetails userDetails = userdetail.loadUserByUsername(user.getUsername());
-    String jwt = jwtutil.generateToken(userDetails.getUsername());
-    return new ResponseEntity<>(jwt, HttpStatus.OK);
+    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest request) {
+        // Bad credentials propagate to the handler as 401; we no longer mask every
+        // failure (including server errors) as a generic 400.
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+        UserDetails userDetails = userdetail.loadUserByUsername(request.getUsername());
+        String jwt = jwtutil.generateToken(userDetails.getUsername());
+        return new ResponseEntity<>(jwt, HttpStatus.OK);
+    }
 }
-catch(Exception e){
-    log.error("exceptiom occurred while createauthtoken",e);
-    return new ResponseEntity<>("incorrect username/pswd",HttpStatus.BAD_REQUEST);
-}}}

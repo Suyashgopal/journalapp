@@ -31,3 +31,13 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Logs ###
+*.log
+logs/
+
+# Local secrets / env-specific overrides.
+# application.yml is committed but contains only ${ENV_VAR:default} placeholders.
+# Put real secrets in environment variables or an untracked .env, never in the repo.
+.env
+application-local.yml

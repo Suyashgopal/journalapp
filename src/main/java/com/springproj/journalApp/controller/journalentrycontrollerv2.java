@@ -1,5 +1,6 @@
 package com.springproj.journalApp.controller;
 
+import com.springproj.journalApp.dto.JournalEntryRequest;
 import com.springproj.journalApp.entity.journalentry;
 import com.springproj.journalApp.entity.user;
 import com.springproj.journalApp.service.journalentryservice;
@@ -8,11 +9,11 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -52,22 +53,19 @@ private userservice userservice;
 
 
  @PostMapping
-  public ResponseEntity<journalentry> createentry(@RequestBody journalentry myentry ){
-        try{  Authentication auth= SecurityContextHolder.getContext().getAuthentication();
-            String username = auth.getName();
-            myentry.setDate(LocalDateTime.now());
-            journalentryservice.saveentry(myentry,username);
-            return  new ResponseEntity<>(myentry,HttpStatus.CREATED);
+  public ResponseEntity<journalentry> createentry(@Valid @RequestBody JournalEntryRequest request) {
+        // Validated DTO -> entity mapping. Failures propagate to the GlobalExceptionHandler
+        // instead of echoing the request body with a 400.
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
 
-        }
-        catch(Exception e){
+        journalentry myentry = new journalentry();
+        myentry.setTitle(request.getTitle());
+        myentry.setContent(request.getContent());
+        myentry.setDate(LocalDateTime.now());
 
-            return  new ResponseEntity<>(myentry,HttpStatus.BAD_REQUEST);
-
-        }
-
-
-
+        journalentryservice.saveentry(myentry, username);
+        return new ResponseEntity<>(myentry, HttpStatus.CREATED);
     }
 
 
@@ -78,6 +76,9 @@ private userservice userservice;
         Authentication auth= SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         user user= userservice.findByusername(username);
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
         List<journalentry> collect = user.getJournalentries().stream().filter(x-> x.getId().equals(myid)).collect(Collectors.toList());
 
         if (!collect.isEmpty()) {
@@ -98,8 +99,12 @@ private userservice userservice;
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         user user = userservice.findByusername(username);
-        List<journalentry> collect = user.getJournalentries().stream().filter(x -> x.getId().equals(id)).collect(Collectors.toList());
-        if (!collect.isEmpty()) {
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        // Verify ownership against the caller's own entries before mutating.
+        boolean owns = user.getJournalentries().stream().anyMatch(x -> x.getId().equals(id));
+        if (owns) {
             Optional<journalentry> journalentry = journalentryservice.findbyid(id);
             if (journalentry.isPresent()) {
                 journalentry old = journalentry.get();
@@ -107,7 +112,7 @@ private userservice userservice;
                 old.setTitle(newentry.getTitle() != null && !newentry.getTitle().equals("") ? newentry.getTitle() : old.getTitle());
                 old.setContent(newentry.getContent() != null && !newentry.getContent().equals("") ? newentry.getContent() : old.getContent());
                 journalentryservice.saveentry(old);
-                return new ResponseEntity<>(journalentry.get(), HttpStatus.OK);
+                return new ResponseEntity<>(old, HttpStatus.OK);
             }
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);

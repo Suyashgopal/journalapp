@@ -1,6 +1,7 @@
 package com.springproj.journalApp.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
@@ -28,6 +29,7 @@ public class user {
 
 
     @NonNull
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // never serialize the password hash in API responses
     private String password;
 
       @DBRef

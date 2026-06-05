@@ -1,5 +1,6 @@
 package com.springproj.journalApp.utils;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -12,7 +13,10 @@ import java.util.Map;
 @Component
 public class jwtutil {
 
-    private String SECRET_KEY = "***REMOVED***";
+    // Injected from configuration (env var JWT_SECRET) instead of being
+    // hardcoded in source. The old literal key is compromised and must be rotated.
+    @Value("${jwt.secret}")
+    private String SECRET_KEY;
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
