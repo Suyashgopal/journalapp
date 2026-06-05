@@ -1,0 +1,24 @@
+# =============================================================================
+# LOCAL secrets — this file is gitignored and is NEVER committed.
+# Loaded automatically only when the "local" Spring profile is active.
+# Put your real credentials here for local development.
+# =============================================================================
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://journal_db:godgreat2004@cluster0.z9pqr6d.mongodb.net/journaldb?appName=Cluster0
+
+jwt:
+  secret: HIqGckEte5MvvyxAmO6cemYSCpfUh9HMm7tKTc6gE6ornsNH
+
+# Add others here as you rotate/enable them, e.g.:
+# weather:
+#   api:
+#     key: <your-weatherstack-key>
+# spring:
+#   mail:
+#     username: <your-gmail>
+#     password: <your-gmail-app-password>
+#   redis:
+#     uri: <your-redis-uri>
