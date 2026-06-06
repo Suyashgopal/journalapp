@@ -1,248 +1,99 @@
 # Journal App
 
-A secure REST API for personal journaling built with Spring Boot.
+A secure REST API for personal journaling built using Spring Boot.
 
-The application allows users to create and manage private journal entries, authenticate securely using JWT, track moods through sentiment analysis, and receive weekly mood summaries using asynchronous processing.
-
----
+The application allows users to create private journal entries, manage their accounts, track sentiments, and receive weekly mood summaries through asynchronous email processing.
 
 ## Features
 
-- User registration and authentication using JWT
-- Secure password hashing with BCrypt
-- Role-based authorization (USER / ADMIN)
-- Personal journal CRUD operations
-- User-specific access control for journal entries
-- Sentiment tracking for journal records
-- Weekly mood summary emails
-- Asynchronous processing using Apache Kafka
-- Weather greeting API with Redis caching
+- User registration and login with JWT authentication
+- Secure password storage using BCrypt
+- Role-based access control (USER / ADMIN)
+- Create, read, update, and delete personal journal entries
+- Sentiment tracking for journal entries
+- Weekly sentiment summary emails using scheduled jobs and Kafka
+- Weather-based greeting API with Redis caching
 - Centralized exception handling
-- Request validation using DTOs
-- Swagger API documentation
+- API documentation using Swagger/OpenAPI
 
 ---
 
 ## Tech Stack
 
-| Category | Technology |
-|---|---|
-| Language | Java 11 |
-| Framework | Spring Boot |
-| Security | Spring Security, JWT |
-| Database | MongoDB |
-| ORM/ODM | Spring Data MongoDB |
-| Cache | Redis |
-| Messaging | Apache Kafka |
-| Email | Spring Mail |
-| Documentation | Swagger / OpenAPI |
-| Build Tool | Maven |
-| Utilities | Lombok |
+| Technology | Usage |
+|-----------|-------|
+| Java 11 | Programming Language |
+| Spring Boot | Backend Framework |
+| Spring Security | Authentication and Authorization |
+| JWT | Stateless Authentication |
+| MongoDB | Database |
+| Spring Data MongoDB | Database Operations |
+| Redis | API Response Caching |
+| Apache Kafka | Async Messaging |
+| Maven | Build Tool |
+| Lombok | Reducing Boilerplate Code |
+| Swagger | API Documentation |
 
 ---
 
-# System Architecture
-
-The application follows a layered backend architecture:
+## Project Structure
 
 ```text
-Client
-  |
-  |
-JWT Authentication Filter
-  |
-  |
-Controller Layer
-  |
-  |
-Service Layer
-  |
-  |
-Repository Layer
-  |
-  |
-MongoDB
-```
+src/main/java/com/springproj/journalApp
 
-Additional services:
-
-```text
-Scheduler
-    |
-    |
-Apache Kafka
-    |
-    |
-Email Service
-
-
-Weather API
-    |
-    |
-Redis Cache
-```
-
----
-
-# Project Structure
-
-```text
-journal-app
-
-├── src/main/java/com/springproj/journalApp
-│
 ├── controller
-│   ├── Public APIs
-│   ├── User APIs
-│   ├── Journal APIs
-│   └── Admin APIs
+│   ├── publiccontroller.java
+│   ├── usercontroller.java
+│   ├── journalentrycontrollerv2.java
+│   └── admincontroller.java
 │
 ├── service
-│   ├── Business Logic
-│   ├── Authentication
-│   ├── Email Processing
-│   └── External API Handling
+│   ├── userservice.java
+│   ├── journalentryservice.java
+│   ├── weatherservice.java
+│   ├── EmailService.java
+│   └── SentimentConsumerService.java
 │
 ├── repository
-│   └── MongoDB Data Access
+│   ├── userentryrepo.java
+│   └── journalentryrepo.java
 │
 ├── entity
-│   └── Database Models
+│   ├── user.java
+│   └── journalentry.java
 │
 ├── dto
-│   └── Request/Response Objects
-│
 ├── config
-│   └── Security, Redis, Swagger Configuration
-│
 ├── filter
-│   └── JWT Request Filter
-│
 ├── scheduler
-│   └── Background Jobs
-│
-├── docs
-│   ├── HLD.md
-│   └── LLD.md
-│
-├── pom.xml
-└── README.md
+├── exception
+└── utils
 ```
 
----
+The project follows a layered architecture:
 
-# System Design Documentation
-
-Detailed architecture documentation is available inside the `docs` folder.
-
-## High Level Design (HLD)
-
-Covers complete system architecture:
-
-- System overview
-- Architecture diagram
-- Request flow
-- Authentication flow
-- Kafka workflow
-- Database interactions
-- Redis caching flow
-- External integrations
-- Deployment overview
-
-[View HLD](docs/HLD.md)
-
----
-
-## Low Level Design (LLD)
-
-Covers implementation details:
-
-- Package structure
-- Entity design
-- DTO design
-- Controller responsibilities
-- Service layer logic
-- Repository implementation
-- JWT security flow
-- Redis implementation
-- Error handling
-- Class responsibilities
-
-[View LLD](docs/LLD.md)
-
----
-
-# How It Works
-
-## Authentication Flow
-
-```text
-User Login
-    |
-Credentials Verification
-    |
-JWT Token Generated
-    |
-Token Sent With Requests
-    |
-JWT Filter Validates Token
-    |
-Protected APIs Accessible
 ```
-
----
-
-## Journal Flow
-
-```text
-User Request
-
-      ↓
-
 Controller
-
-      ↓
-
-Service
-
-      ↓
-
-Repository
-
-      ↓
-
-MongoDB
+    |
+Service Layer
+    |
+Repository Layer
+    |
+MongoDB Database
 ```
-
-Each journal entry is linked with its owner so users can access only their own data.
 
 ---
 
-## Weekly Sentiment Flow
+# Application Flow
 
-```text
-Scheduler
-
-    ↓
-
-Fetch User Entries
-
-    ↓
-
-Analyze Sentiments
-
-    ↓
-
-Publish Kafka Event
-
-    ↓
-
-Kafka Consumer
-
-    ↓
-
-Send Email Summary
-```
+1. User registers or logs in.
+2. After successful authentication, a JWT token is generated.
+3. Every protected request passes through JWT validation.
+4. Controllers handle API requests.
+5. Services execute business logic.
+6. Repositories interact with MongoDB.
+7. Background jobs process sentiment summaries and send messages through Kafka.
+8. Kafka consumers handle email delivery asynchronously.
 
 ---
 
@@ -258,56 +109,166 @@ http://localhost:8081/journal
 
 ## Public APIs
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/public/health-check` | Check server status |
-| POST | `/public/signup` | Register user |
-| POST | `/public/login` | Login and generate JWT |
+### Health Check
 
-Example signup:
+```http
+GET /public/health-check
+```
+
+Response:
+
+```text
+ok
+```
+
+---
+
+### Register User
+
+```http
+POST /public/signup
+```
+
+Request:
 
 ```json
 {
   "username": "suyash",
   "password": "password123",
-  "email": "user@gmail.com"
+  "email": "user@gmail.com",
+  "sentimentAnalysis": true
 }
+```
+
+---
+
+### Login
+
+```http
+POST /public/login
+```
+
+Request:
+
+```json
+{
+  "username": "suyash",
+  "password": "password123"
+}
+```
+
+Response:
+
+```text
+JWT Token
+```
+
+Use token:
+
+```text
+Authorization: Bearer <token>
 ```
 
 ---
 
 # Journal APIs
 
-Requires authentication.
+Authentication required.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/journal` | Get user journals |
-| POST | `/journal` | Create journal |
-| GET | `/journal/id/{id}` | Get journal by ID |
-| PUT | `/journal/id/{id}` | Update journal |
-| DELETE | `/journal/id/{id}` | Delete journal |
+## Create Journal Entry
 
-Example:
+```http
+POST /journal
+```
+
+Request:
 
 ```json
 {
   "title": "My Day",
-  "content": "Completed Spring Boot project"
+  "content": "Today was productive"
 }
+```
+
+---
+
+## Get All Entries
+
+```http
+GET /journal
+```
+
+---
+
+## Get Entry By ID
+
+```http
+GET /journal/id/{id}
+```
+
+---
+
+## Update Entry
+
+```http
+PUT /journal/id/{id}
+```
+
+Request:
+
+```json
+{
+  "title": "Updated title",
+  "content": "Updated content"
+}
+```
+
+---
+
+## Delete Entry
+
+```http
+DELETE /journal/id/{id}
 ```
 
 ---
 
 # User APIs
 
-Requires authentication.
+Authentication required.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/user/new` | Weather greeting |
-| PUT | `/user` | Update account |
-| DELETE | `/user` | Delete account |
+## Weather Greeting
+
+```http
+GET /user/new
+```
+
+Returns user greeting with cached weather information.
+
+---
+
+## Update User
+
+```http
+PUT /user
+```
+
+Request:
+
+```json
+{
+  "username": "newUsername",
+  "password": "newPassword"
+}
+```
+
+---
+
+## Delete Account
+
+```http
+DELETE /user
+```
 
 ---
 
@@ -315,10 +276,17 @@ Requires authentication.
 
 Requires ADMIN role.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/admin` | Get all users |
-| POST | `/admin/create-admin-user` | Create admin |
+## Get Users
+
+```http
+GET /admin
+```
+
+## Create Admin User
+
+```http
+POST /admin/create-admin-user
+```
 
 ---
 
@@ -326,36 +294,36 @@ Requires ADMIN role.
 
 ## Users Collection
 
-```text
-users
+Stores user account details.
 
-id
-username
-password
-email
-roles
-sentimentAnalysis
-journalEntries
-```
+| Field | Description |
+|-|-|
+| id | MongoDB ObjectId |
+| username | Unique username |
+| password | BCrypt encrypted password |
+| email | User email |
+| roles | User permissions |
+| sentimentAnalysis | Weekly summary preference |
+| journalentries | User journal references |
 
 ---
 
 ## Journal Entries Collection
 
-```text
-journal_entries
+Stores user journals.
 
-id
-title
-content
-date
-sentiment
-```
+| Field | Description |
+|-|-|
+| id | MongoDB ObjectId |
+| title | Entry title |
+| content | Entry content |
+| date | Creation date |
+| sentiment | Entry mood |
 
 Relationship:
 
 ```text
-One User  →  Multiple Journal Entries
+One User → Multiple Journal Entries
 ```
 
 ---
@@ -365,36 +333,46 @@ One User  →  Multiple Journal Entries
 Create a `.env` file:
 
 ```env
-MONGODB_URI=your_database_url
+MONGODB_URI=your_mongodb_connection_string
 
-JWT_SECRET=your_secret
+JWT_SECRET=your_secret_key
 
-REDIS_URI=redis_url
+REDIS_URI=redis://localhost:6379
 
-WEATHER_API_KEY=weather_key
+WEATHER_API_KEY=your_weather_api_key
 
-MAIL_USERNAME=email
+MAIL_USERNAME=your_email
 
-MAIL_PASSWORD=password
+MAIL_PASSWORD=your_app_password
 
 KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 ```
 
-`.env` should never be committed.
+Never commit `.env` files.
 
 ---
 
 # Running Locally
 
-Clone the repository:
+## Requirements
+
+- Java 11+
+- MongoDB
+- Maven
+- Redis (optional)
+- Kafka (optional)
+
+---
+
+Clone repository:
 
 ```bash
-git clone <repo-url>
+git clone <repository-url>
 
 cd journalApp
 ```
 
-Run application:
+Run:
 
 Windows:
 
@@ -408,7 +386,7 @@ Linux/Mac:
 ./mvnw spring-boot:run
 ```
 
-Application:
+Application runs on:
 
 ```text
 http://localhost:8081/journal
@@ -424,12 +402,12 @@ http://localhost:8081/journal/swagger-ui/index.html
 
 # Future Improvements
 
-- Docker containerization
-- CI/CD pipeline
-- Refresh token support
-- More test coverage
-- Advanced sentiment analysis
-- Monitoring and logging
+- Add refresh tokens
+- Add Docker support
+- Improve automated testing
+- Add CI/CD pipeline
+- Add real-time sentiment analysis
+- Improve monitoring and logging
 
 ---
 
@@ -437,4 +415,4 @@ http://localhost:8081/journal/swagger-ui/index.html
 
 **Suyash Gopal**
 
-Backend project demonstrating Spring Boot, JWT security, MongoDB, Redis caching, Kafka messaging, and scalable REST API design.
+Spring Boot backend project built for learning backend development concepts including authentication, databases, caching, messaging, and API design.
